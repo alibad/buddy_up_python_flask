@@ -36,28 +36,74 @@ def slack_events():
     if payload.startswith('payload='):
         payload = payload[len('payload='):]
 
-    print(f"Received data: {payload}") 
+    print(f"Received data: {payload}")
 
     event = json.loads(payload)
 
-    print(f"Received event: {event}") 
+    print(f"Received event: {event}")
 
     if not signature_verifier.is_valid_request(data, request.headers):
         return jsonify({'status': 'invalid_request'}), 403
 
     if event is not None:
-        print(f"Event type: {event['type']}, Event Callback Id: {event['callback_id']}") 
+        print(f"Event type: {event['type']}")
 
         if event['type'] == 'shortcut' and event['callback_id'] == 'buddy_up':
 
             user_id = event['user']['id']
 
-            print(f"Posting a message to: {event}") 
+            print(f"Posting a message to: {event}")
+
+            try:
+                # Open a modal
+                view_payload = {
+                    "trigger_id": event['trigger_id'],
+                    "view": {
+                        "type": "modal",
+                        "callback_id": "buddy_up_modal",
+                        "title": {
+                            "type": "plain_text",
+                            "text": "Buddy Up"
+                        },
+                        "blocks": [
+                            {
+                                "type": "input",
+                                "block_id": "channel_input",
+                                "label": {
+                                    "type": "plain_text",
+                                    "text": "Select a channel"
+                                },
+                                "element": {
+                                    "type": "conversations_select",
+                                    "action_id": "channel_select",
+                                    "placeholder": {
+                                        "type": "plain_text",
+                                        "text": "Select a channel"
+                                    }
+                                }
+                            }
+                        ],
+                        "submit": {
+                            "type": "plain_text",
+                            "text": "Submit"
+                        }
+                    }
+                }
+
+                response = web_client.views_open(**view_payload)
+                print(f"Response: {response}")
+
+                return jsonify({'status': 'ok'}), 200
+            except SlackApiError as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+        elif event['type'] == 'view_submission':
+            user_id = event['user']['id']
+            channel_id = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
 
             try:
                 web_client.chat_postMessage(
-                    channel=user_id,
-                    text=f"Hello <@{user_id}>! You invoked the Buddy Up shortcut."
+                    channel=channel_id,
+                    text=f"Hello! This message is sent from <@{user_id}>."
                 )
                 return jsonify({'status': 'ok'}), 200
             except SlackApiError as e:
