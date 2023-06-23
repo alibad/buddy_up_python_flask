@@ -180,7 +180,13 @@ def slack_events():
                 # kv.set(workflow_step_id, selected_channel)
                 channel_mappings[workflow_step_id] = selected_channel
 
-                return jsonify({'status': 'ok'}), 200
+                try:
+                    web_client.workflows_updateStep(workflow_step_edit_id=workflow_step_edit_id, inputs={"channel": {"value": selected_channel}}, outputs=[{"name": "message", "type": "text", "label": "Saved Workflow + Channel Link"}])
+                    
+                except SlackApiError as e:
+                    print(f"e: {e}")
+                    
+                    return jsonify({"status": "error", "message": str(e)}), 500
             else:
                 channel_id = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
 
