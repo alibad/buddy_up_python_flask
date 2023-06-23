@@ -165,7 +165,7 @@ def slack_events():
             except SlackApiError as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
         elif event['type'] == 'view_submission':
-            if event['view']['callback_id'] == 'buddy_up':
+            if event['view']['callback_id'] == 'buddy_up_workflow_step':
                 workflow_step_id = event['workflow_step']['step_id']
                 workflow_step_edit_id = event['workflow_step']['workflow_step_edit_id']
                 selected_channel = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
