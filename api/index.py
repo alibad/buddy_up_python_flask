@@ -177,7 +177,7 @@ def slack_events():
                 # kv.set(workflow_step_id, selected_channel)
                 channel_mappings[workflow_step_id] = selected_channel
 
-                web_client.workflows_updateStep(workflow_step_edit_id=workflow_step_edit_id, workflow_step_execute_id=workflow_step_id, inputs={"channel": {"value": selected_channel}}, outputs=[{"name": "message", "type": "text", "label": "Saved Workflow + Channel Link"}])
+                web_client.workflows_updateStep(workflow_step_edit_id=workflow_step_edit_id, inputs={"channel": {"value": selected_channel}}, outputs=[{"name": "message", "type": "text", "label": "Saved Workflow + Channel Link"}])
 
                 return jsonify({'status': 'ok'}), 200
             else:
