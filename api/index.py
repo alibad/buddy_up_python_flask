@@ -163,7 +163,10 @@ def slack_events():
 
                 return jsonify({'status': 'ok'}), 200
             except SlackApiError as e:
+                print(f"e: {e}")
+                
                 return jsonify({"status": "error", "message": str(e)}), 500
+            
         elif event['type'] == 'view_submission':
             if event['view']['callback_id'] == 'buddy_up_workflow_step':
                 workflow_step_id = event['workflow_step']['step_id']
@@ -181,6 +184,8 @@ def slack_events():
                     web_client.workflows_updateStep(workflow_step_edit_id=workflow_step_edit_id, inputs={"channel": {"value": selected_channel}}, outputs=[{"name": "message", "type": "text", "label": "Saved Workflow + Channel Link"}])
                     return jsonify({'status': 'ok'}), 200
                 except SlackApiError as e:
+                    print(f"e: {e}")
+                    
                     return jsonify({"status": "error", "message": str(e)}), 500
             else:
                 channel_id = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
@@ -189,6 +194,8 @@ def slack_events():
                     match_members_in_channel(channel_id, web_client)
                     return jsonify({'status': 'ok'}), 200
                 except SlackApiError as e:
+                    print(f"e: {e}")
+
                     return jsonify({"status": "error", "message": str(e)}), 500
             
         elif event['type'] == 'workflow_step_edit':
@@ -243,8 +250,10 @@ def slack_events():
 
             return jsonify({'status': 'ok'}), 200
         else:
+            print(f"unknown_event")
             return jsonify({"status": "error", "message": "unknown_event"}), 400
     else:
+        print(f"missing_payload")
         return jsonify({"status": "error", "message": "missing_payload"}), 400
 
 if __name__ == "__main__":
