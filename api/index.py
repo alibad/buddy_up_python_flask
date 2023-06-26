@@ -6,12 +6,12 @@ import json
 import os
 from dotenv import load_dotenv
 from urllib.parse import unquote_plus
-
-# Global dictionary for storing channel mappings
-channel_mappings = {}
+from VercelKV import VercelKV
 
 # Load environment variables
 load_dotenv('.env.development.local')
+
+vercel_kv = VercelKV()
 
 # Setup the WebClient and the SignatureVerifier
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
@@ -173,22 +173,26 @@ def slack_events():
                 workflow_step_edit_id = event['workflow_step']['workflow_step_edit_id']
                 selected_channel = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
 
+                print(f"workflow_step_edit_id: {workflow_step_edit_id}")
                 print(f"workflow_step_id: {workflow_step_id}")
                 print(f"selected_channel: {selected_channel}")
 
                 # Save the selected channel to Vercel KV
-                # kv.set(workflow_step_id, selected_channel)
-                channel_mappings[workflow_step_id] = selected_channel
+                vercel_kv.set(workflow_step_id, selected_channel)
 
                 try:
                     web_client.workflows_updateStep(workflow_step_edit_id=workflow_step_edit_id, inputs={"channel": {"value": selected_channel}}, outputs=[{"name": "message", "type": "text", "label": "Saved Workflow + Channel Link"}])
                     
+                    return jsonify({'status': 'ok'}), 200
+                
                 except SlackApiError as e:
                     print(f"e: {e}")
                     
                     return jsonify({"status": "error", "message": str(e)}), 500
-            else:
+            elif event['view']['callback_id'] == 'buddy_up_modal':
                 channel_id = event['view']['state']['values']['channel_input']['channel_select']['selected_conversation']
+
+                print(f"WARNING: This should only execute in the case of a global shortcut")
 
                 try:
                     match_members_in_channel(channel_id, web_client)
@@ -240,13 +244,10 @@ def slack_events():
             print(f"workflow_step_id: {workflow_step_id}")
 
             # Retrieve the selected channel from Vercel KV
-            # selected_channel = kv.get(workflow_step_id)
-            selected_channel = channel_mappings.get(workflow_step_id)
+            selected_channel = vercel_kv.get(workflow_step_id)
             print(f"selected_channel: {selected_channel}")
 
             match_members_in_channel(selected_channel, web_client)
-
-            web_client.workflows_stepCompleted(workflow_step_execute_id=workflow_step_execute_id, outputs={"message": {"value": "Pairs have been matched"}})
 
             return jsonify({'status': 'ok'}), 200
         else:
